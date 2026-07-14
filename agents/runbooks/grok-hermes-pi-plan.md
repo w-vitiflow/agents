@@ -9,7 +9,7 @@
 
 Open this project in Grok/Cursor and say:
 
-> Execute the plan in `agents/runbooks/grok-hermes-pi-plan.md`. Start at the first unchecked todo. I have X Premium+. Vitiflow GitHub URL: `git@github.com:VitiFlow-B-V/agents.git`.
+> Execute the plan in `agents/runbooks/grok-hermes-pi-plan.md`. Start at the first unchecked todo. I have X Premium+. Vitiflow GitHub URL: `git@github.com:w-vitiflow/agents.git`.
 
 **Prerequisites confirmed:**
 - Partner repo: **Vitiflow** (`agents/` workspace)
@@ -17,7 +17,13 @@ Open this project in Grok/Cursor and say:
 - Existing stack: Hermes in Docker on **CT 231** (pimox5 / `root@192.168.0.49`), ERP agent unchanged
 - Homelab harness docs: `~/projects/homelab/`
 
-**GitHub URL (provided):** `git@github.com:VitiFlow-B-V/agents.git` — now being wired up.
+**GitHub URL (updated 2026-07-15):** `git@github.com:w-vitiflow/agents.git`
+
+Key "pimox5-vitiflow" added on the @w-vitiflow account with read/write access.
+
+Private key (`id_ed25519`) prepared on pimox5 and available inside CT 231 (`/root/.ssh/`) and inside the container (`/opt/data/home/.ssh/`).
+
+SSH host key for github.com also added.
 
 **OAuth status:** See Phase 4. The loopback timed out. We are using `--manual-paste`. Provide the callback value from the browser here in chat when ready.
 
@@ -337,7 +343,7 @@ docker exec hermes-grok bash -c '
 
 1. Discover CT 231 mounts (fsmount / mp0 / mp1) — **DONE**
 2. Create `ai-brain/` vault + bind into CT 231 — **DONE**
-3. Scaffold Vitiflow `agents/` locally + push to GitHub — scaffold **DONE**, push pending URL
+3. Scaffold Vitiflow `agents/` locally + push to GitHub — scaffold **DONE**, remote updated, awaiting push from desktop
 4. Clone Vitiflow to `/opt/vitiflow` on CT 231 — bootstrapped (real clone pending URL)
 5. Deploy `docker-compose.grok.yml` + patch existing compose — **DONE** (restarted hermes)
 6. OAuth Hermes + Grok CLI (device code in browser) — containers up, URLs printed below; **user action required**
@@ -346,7 +352,7 @@ docker exec hermes-grok bash -c '
 
 **Next for user:**
 - Complete the two browser OAuth flows (see Phase 4 section).
-- Provide the Vitiflow GitHub URL so we can `git remote add` + push here, and do proper `git clone` on the Pi (overwriting the bootstrap).
+- GitHub URL provided: `git@github.com:w-vitiflow/agents.git`. Local remote updated. Push from desktop, then real clone on Pi.
 - After auth success, run the `hermes config set` lines and test `grok -p` + handoff write.
 
 **Pi 5 8 GB:** 2 GB cap on `hermes-grok`; monitor with `docker stats`.
@@ -369,10 +375,11 @@ docker exec hermes-grok bash -c '
 - [x] **discover-ct231-mounts** — SSH pimox5, inspect `pct config 231` and mounts; document mp0/mp1 and fsmount path (mp0=homelab-agentic, mp1=ai-brain from seagate nextcloud data; CT restarted)
 - [x] **create-ai-brain-vault** — Create `ai-brain/` on Nextcloud; bind to CT 231 at `/opt/ai-brain` (created under Nextcloud files/, mp1 bound, initial README/context/handoff template populated)
 - [x] **scaffold-vitiflow-agents** — Create `agents/` with SOUL.md, prompts, README (done locally; Vitiflow dir now has its own `git init main` + commit; separate from homelab bare git)
-- [ ] **push-vitiflow-github** — Commit and push to partner Vitiflow repo (local repo initialized+committed with scaffold; **GitHub URL still needed** to `git remote add origin <URL> && git push -u origin main` then real clone on Pi)
+- [ ] **push-vitiflow-github** — Commit and push to partner Vitiflow repo (local remote updated to new URL; user to run push from desktop)
 - [x] **compose-grok-stack** — `docker-compose.grok.yml` + patch existing hermes compose for brain mount (files created on CT; existing hermes restarted with mounts)
-- [x] **clone-vitiflow-pi** — Clone Vitiflow to `/opt/vitiflow` on CT 231 (bootstrapped via tar + git init placeholder at /opt/vitiflow; real `git clone <GitHub-URL>` needed when URL provided)
-- [ ] **hermes-xai-oauth** — X Premium+ OAuth (loopback timed out; switched to --manual-paste flow. User must authorize in browser then provide the callback URL/code for paste-in)
+- [x] **clone-vitiflow-pi** — Clone Vitiflow to `/opt/vitiflow` on CT 231 (bootstrap in place; real clone command ready once pushed)
+- [x] **hermes-xai-oauth** — X Premium+ OAuth (user completed interactive --manual-paste in their terminal; confirmed model.provider=xai-oauth, default=grok-build-0.1, base_url=https://api.x.ai/v1)
+- [ ] **grok-cli-login** — Separate grok CLI login for `grok -p` (latest device code: 9253-XR3C)
 - [x] **grok-cli-skill** — Install grok CLI, login, install skill (npm install -g done; skill installed after confirm; login device code pending browser)
 - [x] **configure-agent-soul** — SOUL.md, brain rules, git config, deploy key (git identity set for /opt/data/home; SOUL and prompts scaffolded in repo)
 - [ ] **verify-and-document** — Full checklist; update this file with discovered paths (plan.md extensively annotated with actual paths + execution notes; mounts verified inside CT and hermes container)

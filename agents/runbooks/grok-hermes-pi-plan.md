@@ -21,10 +21,17 @@ Open this project in Grok/Cursor and say:
 
 Private key (`id_ed25519`) prepared on pimox5 host at `/root/.ssh/id_ed25519` and copied inside CT 231 at `/root/.ssh/id_ed25519` (also available for container at `/opt/data/home/.ssh/` once set up).
 
-**Pubkey (for matching the deploy key on GitHub):**
+**NEW dedicated pubkey (use this one for w-vitiflow/agents):**
 ```
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFbjy0Ob398ReJ6Bfh1aTU+93QS0cIqxP48dsekG9EUX your-email@example.com
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKJtkpJQUYDRyd78uyR0UPusOyPBTRbfJ2/sPyrKK7zM pimox5-vitiflow-agents-20260715
 ```
+
+**Key files on pimox5:**
+- Host: `/root/.ssh/id_ed25519_vitiflow` (private) + `.pub`
+- Inside CT 231: `/root/.ssh/id_ed25519_vitiflow`
+- Inside hermes-grok container: `$HOME/.ssh/id_ed25519_vitiflow` (i.e. `/opt/data/home/.ssh/...`)
+
+(The previous key `id_ed25519` was accidentally associated with another repo; we generated a fresh one for `agents` only.)
 
 **Current push status (executed from pimox5):**
 Source of truth at `/root/projects/Vitiflow` on pimox5 (full scaffold + plan transferred via bundle).
@@ -36,24 +43,30 @@ fatal: Could not read from remote repository.
 
 **Step 1 (CRITICAL - you must do on GitHub web UI now):**
 - Log into https://github.com with the **w-vitiflow** account.
-- Go to https://github.com/w-vitiflow/agents  (confirm the repo exists and is named exactly "agents")
-- Go to **Settings > Deploy keys** (or Security > Deploy keys)
-- Find the key that matches the pubkey above (likely named "pimox5-vitiflow" or similar).
-- Click **Edit**, check the box **"Allow write access"**, and save.
-- (If key is not listed for the repo, add it as a new deploy key with write access enabled.)
+- Go to https://github.com/w-vitiflow/agents
+- Go to **Settings > Deploy keys**
+- **Remove** any old "pimox5" or previous key that was linked to the wrong repo (to avoid "already in use" errors).
+- Click **Add deploy key**
+- Title: `pimox5-vitiflow-agents`
+- Paste the **NEW** public key exactly:
+  ```
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKJtkpJQUYDRyd78uyR0UPusOyPBTRbfJ2/sPyrKK7zM pimox5-vitiflow-agents-20260715
+  ```
+- **Important**: Check the box **"Allow write access"**
+- Click "Add key"
 
-**Step 2 (I will run on pimox5 once write is enabled):**
+**Step 2 (I will run on pimox5 once the new key is added with write access):**
 ```bash
-ssh root@192.168.0.49 'cd /root/projects/Vitiflow && GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no" git push -u origin main'
+ssh root@192.168.0.49 'cd /root/projects/Vitiflow && GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519_vitiflow -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git push -u origin main'
 ```
 
-(Or directly on pimox5 shell.)
+(Or log into pimox5 and run it.)
 
-**Clone (after push succeeds):**
+**Clone (after successful push):**
 ```bash
 /root/clone-vitiflow.sh
 ```
-(Now fixed to do full clone + basic setup inside CT 231.)
+Uses the new dedicated key. Scripts have been updated on pimox5.
 ```
 
 **Clone on Pi (after push succeeds, I can run this on pimox5):**
@@ -394,14 +407,13 @@ docker exec hermes-grok bash -c '
 8. Verify + update this runbook with actual paths discovered — plan heavily updated; more after logins
 
 **Next for user (major blocker):**
-- On GitHub (w-vitiflow account): go to https://github.com/w-vitiflow/agents → Settings → Deploy keys. Edit the key matching this pubkey:
-  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFbjy0Ob398ReJ6Bfh1aTU+93QS0cIqxP48dsekG9EUX your-email@example.com
-  Check **"Allow write access"** → Save.
-- Once done, say "push now" (or I will retry).
-- Fresh grok CLI device code (generated 2026-07-15): **ZMQE-HP8Y**
-  Open https://accounts.x.ai/oauth2/device , sign in X Premium+, enter code.
-- After push, I will run `/root/clone-vitiflow.sh` then post setup + tests.
-- Full verification checklist after that.
+- On GitHub (w-vitiflow/agents):
+  - Remove any old pimox5 key that was added to the wrong repo.
+  - Add the **NEW** key (title: pimox5-vitiflow-agents) with the pubkey shown above.
+  - **Check "Allow write access"** when adding.
+- Once added, reply "push now" or "try push".
+- Fresh grok CLI device code (still valid): **ZMQE-HP8Y**
+- After push + clone succeeds I will run the setup commands, tests, and verification.
 
 **Pi 5 8 GB:** 2 GB cap on `hermes-grok`; monitor with `docker stats`.
 

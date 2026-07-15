@@ -1,8 +1,8 @@
 # Grok Hermes Agent on Pi 5 (Vitiflow + Obsidian AI Brain)
 
-**Status:** In progress — Phase 0-3 complete (discovery, ai-brain, scaffold, compose, bootstrap clone); OAuth logins pending browser steps (see below)
+**Status:** In progress — Phases 0-3 + compose + mounts complete. Scaffold transferred to pimox5. Push blocked on GitHub deploy key write permission. Scripts (clone/post-clone) fixed on pimox5. Grok CLI login pending. 
 **Created:** 2026-07-14  
-**Last executed:** 2026-07-15 (this session)  
+**Last executed:** 2026-07-15 (pimox5 focus per user request)  
 **Inspired by:** [@sudoingX](https://x.com/sudoingX) (Sudo su) — Hermes orchestrator + Grok Build for coding + git/Obsidian as agent memory
 
 ## How to resume in a new session
@@ -19,35 +19,52 @@ Open this project in Grok/Cursor and say:
 
 **GitHub URL (updated 2026-07-15):** `git@github.com:w-vitiflow/agents.git`
 
-Key "pimox5-vitiflow" added on the @w-vitiflow account with read/write access.
+Private key (`id_ed25519`) prepared on pimox5 host at `/root/.ssh/id_ed25519` and copied inside CT 231 at `/root/.ssh/id_ed25519` (also available for container at `/opt/data/home/.ssh/` once set up).
 
-Private key (`id_ed25519`) prepared on pimox5 and available inside CT 231 (`/root/.ssh/`) and inside the container (`/opt/data/home/.ssh/`).
+**Pubkey (for matching the deploy key on GitHub):**
+```
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFbjy0Ob398ReJ6Bfh1aTU+93QS0cIqxP48dsekG9EUX your-email@example.com
+```
 
-SSH host key for github.com also added.
+**Current push status (executed from pimox5):**
+Source of truth at `/root/projects/Vitiflow` on pimox5 (full scaffold + plan transferred via bundle).
+Last push attempt gave:
+```
+ERROR: Permission to w-vitiflow/agents.git denied to deploy key
+fatal: Could not read from remote repository.
+```
 
-**Push from desktop (run on your machine with w-vitiflow GitHub key):**
-If you don't remember the folder:
+**Step 1 (CRITICAL - you must do on GitHub web UI now):**
+- Log into https://github.com with the **w-vitiflow** account.
+- Go to https://github.com/w-vitiflow/agents  (confirm the repo exists and is named exactly "agents")
+- Go to **Settings > Deploy keys** (or Security > Deploy keys)
+- Find the key that matches the pubkey above (likely named "pimox5-vitiflow" or similar).
+- Click **Edit**, check the box **"Allow write access"**, and save.
+- (If key is not listed for the repo, add it as a new deploy key with write access enabled.)
+
+**Step 2 (I will run on pimox5 once write is enabled):**
 ```bash
-find ~ /home -type d -name "Vitiflow" 2>/dev/null | head -5
-find ~ /home -name "grok-hermes-pi-plan.md" 2>/dev/null | head -5
-```
-Then cd into the Vitiflow folder and:
-```bash
-git remote remove origin 2>/dev/null || true
-git remote add origin git@github.com:w-vitiflow/agents.git
-git push -u origin main
-```
-This populates the empty repo with our current scaffold (creating it from scratch).
+ssh root@192.168.0.49 'cd /root/projects/Vitiflow && GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519 -o StrictHostKeyChecking=no" git push -u origin main'
 ```
 
-**Clone on Pi (after push, run on pimox5):**
+(Or directly on pimox5 shell.)
+
+**Clone (after push succeeds):**
 ```bash
 /root/clone-vitiflow.sh
 ```
-(or the one-liner in the script). The script is already prepared on pimox5.
+(Now fixed to do full clone + basic setup inside CT 231.)
 ```
 
-**OAuth status:** See Phase 4. The loopback timed out. We are using `--manual-paste`. Provide the callback value from the browser here in chat when ready.
+**Clone on Pi (after push succeeds, I can run this on pimox5):**
+```bash
+/root/clone-vitiflow.sh
+```
+This will clone the freshly pushed content into CT 231 at the correct location `/opt/vitiflow`.
+```
+```
+
+**OAuth status:** Hermes xai-oauth completed (model.provider = xai-oauth, grok-build-0.1). Grok CLI login (for `grok -p` skill) still pending fresh device code. Provide device code output or new code if needed.
 
 ---
 
@@ -260,9 +277,11 @@ services:
 
 **Actual (executed):**
 - Patched existing compose with homelab ro + ai-brain rw volumes.
-- Created `/root/hermes/docker-compose.grok.yml` (separate .hermes-grok data, ports 9120/8643, 2G mem, all three volumes + vitiflow placeholder + nextcloud ro).
-- Restarted existing `hermes` (volumes now active inside docker container at /opt/ai-brain and /opt/homelab-agentic).
-- Password for grok dashboard added to .env as HERMES_GROK_DASHBOARD_PASSWORD.
+- Created `/root/hermes/docker-compose.grok.yml` (separate .hermes-grok data, ports 9120/8643, 2G mem, volumes for vitiflow:/workspace/vitiflow , ai-brain, homelab-agentic, nextcloud).
+- hermes-grok and hermes containers running.
+- /opt/vitiflow (empty for now) already visible as /workspace/vitiflow inside hermes-grok.
+- Password for grok dashboard set.
+- Clone scripts fixed on pimox5 (clone-vitiflow.sh + post-clone-vitiflow.sh).
 
 **Never** mount the same `/root/.hermes` volume to two containers.
 
@@ -365,20 +384,25 @@ docker exec hermes-grok bash -c '
 
 1. Discover CT 231 mounts (fsmount / mp0 / mp1) — **DONE**
 2. Create `ai-brain/` vault + bind into CT 231 — **DONE**
-3. Scaffold Vitiflow `agents/` locally + push to GitHub — scaffold **DONE**, remote updated, awaiting push from desktop
+3. Scaffold Vitiflow `agents/` locally + push to GitHub — scaffold **DONE**, full state transferred to pimox5, awaiting repo creation on GitHub then push from pimox5
 4. Clone Vitiflow to `/opt/vitiflow` on CT 231 — bootstrapped (real clone pending URL)
 5. Deploy `docker-compose.grok.yml` + patch existing compose — **DONE** (restarted hermes)
 6. OAuth Hermes + Grok CLI (device code in browser) — containers up, URLs printed below; **user action required**
 7. Configure SOUL, prompts, git identity — mostly **DONE**
 8. Verify + update this runbook with actual paths discovered — plan heavily updated; more after logins
 
-**Next for user:**
-- GitHub URL: `git@github.com:w-vitiflow/agents.git` (repo is empty — we're creating from scratch).
-- Locate your local Vitiflow folder and push the current scaffold.
-- Fresh grok CLI device code: 3N8Y-GH8F
-- Once pushed + cloned on Pi, I will continue with testing, git config inside workspace, verification, etc.
+**Next for user (major blocker):**
+- On GitHub (w-vitiflow account): go to the agents repo Settings > Deploy keys, EDIT the pimox5 key (match the pubkey in this plan), **check "Allow write access"** and Save.
+- (Repo appears to exist already based on the "denied to deploy key" error.)
+- Once fixed, tell me "try the push again" or I will keep attempting.
+- Then clone will be run from pimox5: /root/clone-vitiflow.sh
+- For grok CLI login: I can generate a fresh device code on request (previous codes expired). Open https://accounts.x.ai/oauth2/device and enter code.
 
 **Pi 5 8 GB:** 2 GB cap on `hermes-grok`; monitor with `docker stats`.
+
+**Scripts on pimox5 (ready):**
+- /root/clone-vitiflow.sh   (full clone inside CT 231)
+- /root/post-clone-vitiflow.sh   (perms + git config advice + test commands)
 
 ---
 
@@ -398,11 +422,11 @@ docker exec hermes-grok bash -c '
 - [x] **discover-ct231-mounts** — SSH pimox5, inspect `pct config 231` and mounts; document mp0/mp1 and fsmount path (mp0=homelab-agentic, mp1=ai-brain from seagate nextcloud data; CT restarted)
 - [x] **create-ai-brain-vault** — Create `ai-brain/` on Nextcloud; bind to CT 231 at `/opt/ai-brain` (created under Nextcloud files/, mp1 bound, initial README/context/handoff template populated)
 - [x] **scaffold-vitiflow-agents** — Create `agents/` with SOUL.md, prompts, README (done locally; Vitiflow dir now has its own `git init main` + commit; separate from homelab bare git)
-- [ ] **push-vitiflow-github** — Commit and push to partner Vitiflow repo (local remote updated to new URL; user to run push from desktop)
-- [x] **compose-grok-stack** — `docker-compose.grok.yml` + patch existing hermes compose for brain mount (files created on CT; existing hermes restarted with mounts)
-- [x] **clone-vitiflow-pi** — Clone Vitiflow to `/opt/vitiflow` on CT 231 (bootstrap in place; real clone command ready once pushed)
-- [x] **hermes-xai-oauth** — X Premium+ OAuth (user completed interactive --manual-paste in their terminal; confirmed model.provider=xai-oauth, default=grok-build-0.1, base_url=https://api.x.ai/v1)
-- [ ] **grok-cli-login** — Separate grok CLI login for `grok -p` (latest device code: 3N8Y-GH8F)
-- [x] **grok-cli-skill** — Install grok CLI, login, install skill (npm install -g done; skill installed after confirm; login device code pending browser)
-- [x] **configure-agent-soul** — SOUL.md, brain rules, git config, deploy key (git identity set for /opt/data/home; SOUL and prompts scaffolded in repo)
-- [ ] **verify-and-document** — Full checklist; update this file with discovered paths (plan.md extensively annotated with actual paths + execution notes; mounts verified inside CT and hermes container)
+- [ ] **push-vitiflow-github** — Push from pimox5 (/root/projects/Vitiflow) using dedicated key + GIT_SSH_COMMAND. Blocked: "Permission ... denied to deploy key". User action: enable "Allow write access" on the matching deploy key in GitHub repo settings. Scripts and plan updated on pimox5.
+- [x] **compose-grok-stack** — `docker-compose.grok.yml` + patch existing hermes compose for brain mount (files created on CT; containers running; vitiflow volume declared)
+- [x] **clone-vitiflow-pi** — Clone scripts prepared and fixed on pimox5 (/root/clone-vitiflow.sh now complete; post-clone too). Will run after successful push.
+- [x] **hermes-xai-oauth** — X Premium+ OAuth completed earlier (model set to xai-oauth + grok-build-0.1)
+- [ ] **grok-cli-login** — Separate grok CLI login for `grok -p` skill inside hermes-grok (new device code needed; previous expired)
+- [x] **grok-cli-skill** — Install grok CLI + skill done previously
+- [x] **configure-agent-soul** — SOUL.md + prompts in scaffold; ai-brain context.md populated; key ready in CT + container volume planned
+- [ ] **verify-and-document** — Full checklist after push+clone+logins; update this file with final paths/status. (Current: mounts verified, /opt/vitiflow visible in CT and docker, hermes-grok running)

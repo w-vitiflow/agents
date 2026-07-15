@@ -351,17 +351,19 @@ Default in `/opt/data/home/.grok/config.toml` should be set to grok-build-0.1 af
 1. Add brain paths to Hermes system prompt (both agents).
 2. Create `context.md` in Obsidian (you + partner).
 3. Handoff template fields: goal, done, next, blockers, files touched, git branch.
-4. Git inside container:
+4. Git inside container (use persistent $HOME from volume + the key we placed in $HOME/.ssh):
 
 ```bash
 docker exec hermes-grok bash -c '
   export HOME=/opt/data/home
+  GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
   git config --global user.name "Vitiflow Agent"
   git config --global user.email "agent@vitiflow.local"
+  git config --global --add safe.directory /workspace/vitiflow
 '
 ```
 
-5. GitHub push auth: deploy key or PAT in `/opt/data/home/.ssh/` (never commit).
+5. GitHub push auth: the key is already placed at `/opt/data/home/.ssh/id_ed25519` (copied from CT). Use GIT_SSH_COMMAND pointing at `$HOME/.ssh/id_ed25519` for any git ops the agent runs. The key on CT is `/root/.ssh/id_ed25519`. (never commit keys).
 
 ---
 

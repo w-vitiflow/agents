@@ -440,7 +440,7 @@ docker exec hermes-grok bash -c '
 - [x] **compose-grok-stack** — `docker-compose.grok.yml` + patch existing hermes compose for brain mount (containers running)
 - [x] **clone-vitiflow-pi** — **DONE** (cloned to /opt/vitiflow inside CT 231; visible at /workspace/vitiflow in hermes-grok after restart)
 - [x] **hermes-xai-oauth** — X Premium+ OAuth completed (model: xai-oauth + grok-build-0.1)
-- [ ] **grok-cli-login** — Separate grok CLI login for `grok -p` (fresh device code ZJ33-YBTS — previous ZMQE-HP8Y expired/invalid. Currently not signed in.)
+- [x] **grok-cli-login** — **DONE** (fresh code ZJ33-YBTS succeeded. Signed in as willem251@hotmail.com. grok -p commands working inside container.)
 - [x] **grok-cli-skill** — Install done previously
 - [x] **configure-agent-soul** — SOUL.md, prompts, ai-brain, keys placed in CT + container
 - [x] **verify-and-document** — Basic checks passed (git status + history inside container works with new key, mounts OK, content present). Plan updated.

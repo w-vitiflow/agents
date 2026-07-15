@@ -394,11 +394,14 @@ docker exec hermes-grok bash -c '
 8. Verify + update this runbook with actual paths discovered — plan heavily updated; more after logins
 
 **Next for user (major blocker):**
-- On GitHub (w-vitiflow account): go to the agents repo Settings > Deploy keys, EDIT the pimox5 key (match the pubkey in this plan), **check "Allow write access"** and Save.
-- (Repo appears to exist already based on the "denied to deploy key" error.)
-- Once fixed, tell me "try the push again" or I will keep attempting.
-- Then clone will be run from pimox5: /root/clone-vitiflow.sh
-- For grok CLI login: I can generate a fresh device code on request (previous codes expired). Open https://accounts.x.ai/oauth2/device and enter code.
+- On GitHub (w-vitiflow account): go to https://github.com/w-vitiflow/agents → Settings → Deploy keys. Edit the key matching this pubkey:
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFbjy0Ob398ReJ6Bfh1aTU+93QS0cIqxP48dsekG9EUX your-email@example.com
+  Check **"Allow write access"** → Save.
+- Once done, say "push now" (or I will retry).
+- Fresh grok CLI device code (generated 2026-07-15): **ZMQE-HP8Y**
+  Open https://accounts.x.ai/oauth2/device , sign in X Premium+, enter code.
+- After push, I will run `/root/clone-vitiflow.sh` then post setup + tests.
+- Full verification checklist after that.
 
 **Pi 5 8 GB:** 2 GB cap on `hermes-grok`; monitor with `docker stats`.
 

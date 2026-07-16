@@ -1,0 +1,43 @@
+# ERP Hermes stack — CT 231 (/root/hermes/docker-compose.yml)
+# Secrets live in /root/hermes/.env (not committed). Copy .env.example and fill in.
+services:
+  hermes:
+    extra_hosts:
+      - "erp-mcp:192.168.0.111"
+    image: nousresearch/hermes-agent:latest
+    env_file:
+      - .env
+    container_name: hermes
+    restart: unless-stopped
+    volumes:
+      - ~/.hermes:/opt/data
+      - /root/Nextcloud:/opt/nextcloud
+      - /opt/homelab-agentic:/opt/homelab-agentic:ro
+      - /opt/ai-brain:/opt/ai-brain:rw
+    ports:
+      - "8642:8642"
+      - "9119:9119"
+    environment:
+      - HERMES_UID=10000
+      - HERMES_GID=10000
+      - HERMES_DASHBOARD=1
+      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - HERMES_DASHBOARD_PORT=9119
+      - HERMES_DASHBOARD_INSECURE=1
+    command: gateway run
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 3.5G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      # Quoted pattern required — unquoted "Gateway is running" makes grep treat
+      # "is" and "running" as filenames (container stays unhealthy while gateway runs).
+      test: ["CMD-SHELL", "/opt/hermes/.venv/bin/hermes gateway status 2>/dev/null | grep -Fq 'Gateway is running'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

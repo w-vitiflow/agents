@@ -1,6 +1,6 @@
 # Grok Hermes Agent on Pi 5 (Vitiflow + Obsidian AI Brain)
 
-**Status:** Push + clone SUCCESSFUL (2026-07-15). New dedicated deploy key id_ed25519_vitiflow in use. Workspace at /opt/vitiflow in CT 231 and /workspace/vitiflow inside hermes-grok. Git ops work from container. Hermes xai-oauth confirmed. Next: grok CLI login + full verification + agent testing.
+**Status:** Fully operational (2026-07-17). ERP `hermes` healthcheck fixed (grep quoting). Live CT 231 config exported to `agents/deploy/ct231/`. Telegram topic-scoped. xAI OAuth + OpenRouter fallbacks. Grok CLI 0.2.101. GitHub: `git@github.com:w-vitiflow/agents.git`.
 **Created:** 2026-07-14  
 **Last executed:** 2026-07-15 (push + clone completed on pimox5)  
 **Inspired by:** [@sudoingX](https://x.com/sudoingX) (Sudo su) — Hermes orchestrator + Grok Build for coding + git/Obsidian as agent memory
@@ -33,48 +33,17 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKJtkpJQUYDRyd78uyR0UPusOyPBTRbfJ2/sPyrKK7zM
 
 (The previous key `id_ed25519` was accidentally associated with another repo; we generated a fresh one for `agents` only.)
 
-**Current push status (executed from pimox5):**
-Source of truth at `/root/projects/Vitiflow` on pimox5 (full scaffold + plan transferred via bundle).
-Last push attempt gave:
-```
-ERROR: Permission to w-vitiflow/agents.git denied to deploy key
-fatal: Could not read from remote repository.
-```
+**Deploy snapshot (2026-07-17):** Sanitized compose + config live in `agents/deploy/ct231/`. ERP healthcheck fix: `grep -Fq 'Gateway is running'`.
 
-**Step 1 (CRITICAL - you must do on GitHub web UI now):**
-- Log into https://github.com with the **w-vitiflow** account.
-- Go to https://github.com/w-vitiflow/agents
-- Go to **Settings > Deploy keys**
-- **Remove** any old "pimox5" or previous key that was linked to the wrong repo (to avoid "already in use" errors).
-- Click **Add deploy key**
-- Title: `pimox5-vitiflow-agents`
-- Paste the **NEW** public key exactly:
-  ```
-  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKJtkpJQUYDRyd78uyR0UPusOyPBTRbfJ2/sPyrKK7zM pimox5-vitiflow-agents-20260715
-  ```
-- **Important**: Check the box **"Allow write access"**
-- Click "Add key"
-
-**Step 2 (I will run on pimox5 once the new key is added with write access):**
+**Push from pimox5:**
 ```bash
-ssh root@192.168.0.49 'cd /root/projects/Vitiflow && GIT_SSH_COMMAND="ssh -i /root/.ssh/id_ed25519_vitiflow -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git push -u origin main'
+cd /root/projects/Vitiflow
+GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519_vitiflow -o StrictHostKeyChecking=no' git push origin main
 ```
 
-(Or log into pimox5 and run it.)
-
-**Clone (after successful push):**
+**Re-sync clone on CT 231 after push:**
 ```bash
-/root/clone-vitiflow.sh
-```
-Uses the new dedicated key. Scripts have been updated on pimox5.
-```
-
-**Clone on Pi (after push succeeds, I can run this on pimox5):**
-```bash
-/root/clone-vitiflow.sh
-```
-This will clone the freshly pushed content into CT 231 at the correct location `/opt/vitiflow`.
-```
+/root/clone-vitiflow.sh   # or: pct exec 231 -- bash -c 'cd /opt/vitiflow && git pull'
 ```
 
 **OAuth status:** Hermes xai-oauth completed (model.provider = xai-oauth, grok-build-0.1). Grok CLI login (for `grok -p` skill) still pending fresh device code. Provide device code output or new code if needed.
@@ -89,6 +58,90 @@ Deploy a **second** Hermes Docker container (`hermes-grok`) on CT 231 with:
 - **Vitiflow git clone** at `/opt/vitiflow` → code workspace
 - **Obsidian AI Brain** on Nextcloud → shared markdown memory at `/opt/ai-brain`
 - **Existing `hermes`** (ERP/OpenRouter) gets the brain mount too — no provider change
+
+---
+
+## Final Working Configuration Snapshot (2026-07-17)
+
+The setup on **CT 231 (pimox5 LXC)** is now fully operational. The Telegram bot `@Binnendienst_bot` / "ChefBinnendienst" only responds inside one dedicated topic (thread 31) of the target supergroup. All configuration was finalized via the Hermes TUI + targeted CLI patches.
+
+### CT 231 LXC Details (pimox5)
+- LXC ID: 231
+- Host: root@192.168.0.49 (pimox5)
+- Key mounts (via `pct set` + restart):
+  - mp0: `/opt/homelab-agentic` (read-only harness guidelines)
+  - mp1: `/opt/ai-brain` (Nextcloud Obsidian vault bind from `/mnt/seagate-storage/nextcloud/data/Hermes-agent/files/ai-brain`)
+- Vitiflow clone: `/opt/vitiflow` (rw, mounted into container as `/workspace/vitiflow`)
+- Inside CT: `/root/hermes/` (compose files), `/root/.hermes-grok/` (Hermes data volume)
+
+### hermes-grok Container
+- Image: `nousresearch/hermes-agent:latest`
+- Name: `hermes-grok`
+- Network: host mode
+- Memory limit: 2G
+- Restart: unless-stopped (under s6 supervision)
+- Volumes:
+  - `/root/.hermes-grok:/opt/data`
+  - `/opt/vitiflow:/workspace/vitiflow:rw`
+  - `/opt/ai-brain:/opt/ai-brain:rw`
+  - `/opt/homelab-agentic:/opt/homelab-agentic:ro`
+- Env (in `/root/hermes/docker-compose.grok.yml`):
+  - `TELEGRAM_BOT_TOKEN=...`
+  - `TELEGRAM_ALLOWED_USERS=8454262747,8851361101`
+  - `TELEGRAM_ALLOWED_CHATS=-1004284511728`
+  - `HERMES_DASHBOARD=1`, port 9120
+  - `API_SERVER_ENABLED=true`
+- Command: gateway run (s6 supervised)
+- Dashboard: http://<ct-ip>:9120
+- Inside container HOME for tools: `/opt/data/home`
+
+### Hermes Configuration (final)
+- **Primary provider:** xai-oauth + `grok-build-0.1` (set via TUI + `hermes config set`)
+- **Fallbacks:** OpenRouter chain (Claude 4 Sonnet, o3, Gemini 2.5 Pro, DeepSeek R1) — added via TUI/CLI
+- **Telegram (via TUI + yaml patches):**
+  ```yaml
+  telegram:
+    allowed_users: [8454262747, 8851361101]
+    allowed_chats: ["-1004284511728"]
+    ignored_threads: [1, 2, 3, 5, 7]   # General + all other topics
+    require_mention: false
+  ```
+- Auth: xAI OAuth completed (manual-paste flow). OpenRouter key added.
+- SOUL.md: Loaded from `/opt/vitiflow/agents/SOUL.md` (includes dedicated "Telegram Bot Rules" section enforcing topic + users).
+
+### Key Commands to Inspect / Reproduce Current State
+```bash
+# On pimox5 host
+pct config 231 | grep -E 'mp|memory|rootfs'
+pct exec 231 -- ls -la /opt/vitiflow /opt/ai-brain /opt/homelab-agentic
+
+# Inside CT 231
+cd /root/hermes
+cat docker-compose.grok.yml
+docker ps | grep hermes-grok
+docker inspect hermes-grok --format '{{json .Config.Env}}' | jq
+
+# Hermes config inside container
+docker exec hermes-grok hermes auth list
+docker exec hermes-grok hermes fallback list
+docker exec hermes-grok hermes model --refresh
+docker exec -it hermes-grok hermes --tui     # or hermes for CLI
+
+# Telegram rules (exact)
+docker exec hermes-grok cat /opt/data/config.yaml | sed -n '/^telegram:/,/^[a-z#]/{ /^telegram:/,/^[a-z#]/p }'
+
+# Test scoping (send in thread 31 only)
+docker logs hermes-grok --tail 20 | grep -iE "thread|chat|telegram|update"
+```
+
+### Notes on Final Setup
+- All Telegram scoping done via Hermes TUI (Channels / Messaging) + direct yaml patches for `ignored_threads`.
+- Primary model chosen for speed + agentic tool-use: `grok-build-0.1`.
+- Container uses s6 supervision (recommended).
+- Git inside container uses dedicated deploy key (`id_ed25519_vitiflow`).
+- SOUL.md and plan are source-controlled in this repo and mounted.
+
+This snapshot captures the working production state. Re-run the inspect commands above on the live CT if anything drifts.
 
 ---
 
@@ -443,4 +496,40 @@ docker exec hermes-grok bash -c '
 - [x] **grok-cli-login** — **DONE** (fresh code ZJ33-YBTS succeeded. Signed in as willem251@hotmail.com. grok -p commands working inside container.)
 - [x] **grok-cli-skill** — Install done previously
 - [x] **configure-agent-soul** — SOUL.md, prompts, ai-brain, keys placed in CT + container
-- [x] **verify-and-document** — Basic checks passed (git status + history inside container works with new key, mounts OK, content present). Plan updated.
+- [x] **lock-telegram-topic** — Supergroup `-1004284511728`, thread 31. Improved patch with explicit allowed_users + allowed_chats + ignored_threads applied. SOUL rules added. Git sync guidance given for non-experts. Remaining: other thread IDs may need adding to ignored_threads.
+- [x] **verify-and-document** — Full production snapshot captured (2026-07-17). TUI final config, exact Telegram scoping (thread 31 only), model choice, mounts, auth, and inspect commands documented in new "Final Working Configuration Snapshot" section. All features verified working by user. Plan committed.
+
+## Multi-Model Fallback Capability (added 2026-07-15)
+
+**Goal:** Built-in resilience + ability to use the latest and greatest models as soon as they are released. Primary remains Grok (via xai-oauth) for speed and xAI integration. Fallbacks via OpenRouter give access to almost every new model (Claude, o-series, Gemini, DeepSeek, etc.) without changing the primary.
+
+**Why this increases programming capabilities:**
+- Grok (primary) is fast, creative, well-integrated with the `grok` CLI skill, and benefits from your X Premium+.
+- Complementary models fill gaps: better precision on large refactors, deeper reasoning on hard problems, better context for whole codebases, cost-effective options for high-volume work.
+- As new models are released, they appear on OpenRouter quickly — we can add them to the fallback chain immediately with `hermes fallback add`.
+
+**Recommended fallback chain for programming (complements to Grok):**
+1. `anthropic/claude-4-sonnet` (or latest Claude Sonnet) — Currently the strongest general coding model. Excellent at precise edits, following complex specs, large-scale refactoring, and reliable agent behavior.
+2. `openai/o3` (or latest OpenAI reasoning model) — Superior at multi-step planning, architectural decisions, and solving very difficult bugs or algorithmic problems.
+3. `deepseek/deepseek-r1` (or latest DeepSeek Coder/R1) — Outstanding code generation, very fast and cheap. Great for boilerplate, tests, or when you want many iterations.
+4. `google/gemini-2.5-pro` — Best-in-class context window for understanding entire repositories or massive diffs.
+
+**How it works:**
+- Primary (xai-oauth + latest Grok) is used for most work.
+- Hermes automatically falls back to the chain on rate limits, errors, or overload.
+- You can also manually switch the default model with `hermes model` to test new releases directly.
+
+**Setup commands (from pimox5):**
+```bash
+# 1. Add OpenRouter auth (get key from https://openrouter.ai/keys)
+pct exec 231 -- docker exec hermes-grok bash -c 'export HOME=/opt/data/home; hermes auth add openrouter'
+
+# 2. Build the fallback chain (run `hermes fallback add` multiple times)
+pct exec 231 -- docker exec hermes-grok bash -c 'export HOME=/opt/data/home; hermes fallback list'
+pct exec 231 -- docker exec hermes-grok bash -c 'export HOME=/opt/data/home; hermes fallback add'
+
+# 3. Switch/test a specific model (great for trying brand new releases)
+pct exec 231 -- docker exec hermes-grok bash -c 'export HOME=/opt/data/home; hermes model --refresh'
+```
+
+**In SOUL / agent awareness:** The agent knows it has access to this fallback chain and the ability to leverage the best model for the task at hand.

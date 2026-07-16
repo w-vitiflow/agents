@@ -1,0 +1,33 @@
+# Sanitized snapshot of /root/.hermes-grok/config.yaml on CT 231 (2026-07-17).
+# Runtime credentials (auth.json, live tokens) are NOT included.
+model:
+  default: grok-build-0.1
+  provider: xai-oauth
+  base_url: https://api.x.ai/v1
+fallback_providers:
+  - provider: openrouter
+    model: anthropic/claude-4-sonnet
+  - provider: openrouter
+    model: openai/o3
+  - provider: openrouter
+    model: google/gemini-2.5-pro
+  - provider: openrouter
+    model: deepseek/deepseek-r1
+telegram:
+  reactions: false
+  allowed_chats:
+    - '-1004284511728'
+  require_mention: false
+  ignored_threads:
+    - 1
+    - 2
+    - 3
+    - 5
+    - 7
+  allowed_users:
+    - 8454262747
+    - 8851361101
+image_gen:
+  provider: xai
+  use_gateway: false
+  model: grok-imagine-image

@@ -1,7 +1,10 @@
 # Vitiflow ignores
 node_modules/
 .env
+.env.grok
 *.log
+auth.json
+**/id_ed25519*
 .DS_Store
 __pycache__/
 *.pyc

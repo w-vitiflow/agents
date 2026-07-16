@@ -1,0 +1,40 @@
+# Grok Hermes stack — CT 231 (/root/hermes/docker-compose.grok.yml)
+# Set secrets via environment or /root/hermes/.env.grok (not committed).
+services:
+  hermes-grok:
+    image: nousresearch/hermes-agent:latest
+    container_name: hermes-grok
+    restart: unless-stopped
+    network_mode: host
+    extra_hosts:
+      - erp-mcp:192.168.0.111
+    volumes:
+      - /root/.hermes-grok:/opt/data
+      - /opt/vitiflow:/workspace/vitiflow:rw
+      - /opt/ai-brain:/opt/ai-brain:rw
+      - /opt/homelab-agentic:/opt/homelab-agentic:ro
+      - /root/Nextcloud:/opt/nextcloud:ro
+    environment:
+      - HERMES_DASHBOARD=1
+      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - HERMES_DASHBOARD_PORT=9120
+      - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=admin
+      - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${HERMES_GROK_DASHBOARD_PASSWORD}
+      - API_SERVER_ENABLED=true
+      - API_SERVER_PORT=8643
+      - API_SERVER_KEY=${API_SERVER_KEY}
+      - HERMES_UID=10000
+      - HERMES_GID=10000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
+      - TELEGRAM_ALLOWED_CHATS=${TELEGRAM_ALLOWED_CHATS}
+      - GATEWAY_ALLOW_ALL_USERS=false
+    command:
+      - gateway
+      - run
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
